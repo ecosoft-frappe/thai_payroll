@@ -45,7 +45,7 @@ CUSTOM_FIELDS = {
 		},
 		{
 			"depends_on": "eval:doc.custom_use_thai_pit_calculation",
-			"description": "On create/update slary slip, auto create new revision of Employee Tax Exemption Declaration if yearly salary or year PVD contribution changes",
+			"description": "On create/update salary slip, auto create new revision of Employee Tax Exemption Declaration if yearly salary or year PVD contribution changes",
 			"fieldname": "custom_auto_revise_tax_exemption_declaration",
 			"fieldtype": "Check",
 			"insert_after": "custom_auto_get_latest_salary_for_tax_exemption",
@@ -112,7 +112,7 @@ CUSTOM_FIELDS = {
 			"fieldname": "do_not_use_tax_exemption_proof",
 			"fieldtype": "Check",
 			"label": "Do not use Tax Exemption Proof",
-			"description": "Always use normal Emloyee Exemption Declaration "
+			"description": "Always use normal Employee Exemption Declaration "
             "even on last period salary and disregard Tax Exemption Proof.",
 			"insert_after": "no_salary_recompute_on_submit"
 		}

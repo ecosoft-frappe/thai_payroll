@@ -15,21 +15,23 @@ class EmployeeTaxExemptionDeclarationThaiPayroll(EmployeeTaxExemptionDeclaration
 
 
 @frappe.whitelist()
-def get_income_tax_exemption_rule(payroll_period):
-    payroll_period = frappe.get_cached_doc("Payroll Period", payroll_period)
-    if frappe.db.exists("Income Tax Exemption Rule", payroll_period.name):
-        return frappe.get_cached_doc("Income Tax Exemption Rule", payroll_period.name)
-    else:
-        latest_rule = frappe.get_all(
-            "Income Tax Exemption Rule",
-            filters={"start_date": ["<", payroll_period.start_date]},
-            order_by="start_date desc",
-            pluck="name",
-            limit=1
-        )
-        if not latest_rule:
-            frappe.throw(_("Please setup at least one Income Tax Exemption Rule"))
-        return frappe.get_cached_doc("Income Tax Exemption Rule", latest_rule[0])
+def get_income_tax_exemption_rule(payroll_period=None):
+	if payroll_period is None:
+		frappe.throw(_("Payroll Period is required"))
+	payroll_period = frappe.get_cached_doc("Payroll Period", payroll_period)
+	if frappe.db.exists("Income Tax Exemption Rule", payroll_period.name):
+		return frappe.get_cached_doc("Income Tax Exemption Rule", payroll_period.name)
+	else:
+		latest_rule = frappe.get_all(
+			"Income Tax Exemption Rule",
+			filters={"start_date": ["<", payroll_period.start_date]},
+			order_by="start_date desc",
+			pluck="name",
+			limit=1
+		)
+		if not latest_rule:
+			frappe.throw(_("Please setup at least one Income Tax Exemption Rule"))
+		return frappe.get_cached_doc("Income Tax Exemption Rule", latest_rule[0])
 
 
 def calculate_thai_tax_exemption(doc, method):
