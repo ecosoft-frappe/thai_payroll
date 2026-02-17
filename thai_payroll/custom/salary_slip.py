@@ -194,9 +194,7 @@ def make_withholding_tax_cert_employee(source_name, target_doc=None):
         target.voucher_type = "Salary Slip"
         target.payroll_period = source.custom_payroll_period
         target.pvd_contribution = get_pvd_contribution(source)
-        # TODO:
-        # target.sso_contribution = get_sso_contribution(source)
-        # --
+        target.sso_contribution = get_sso_contribution(source)
         # Get Opening from SSA
         open_earning = source.get_opening_for("taxable_earnings_till_date", source.start_date, source.end_date)
         # --
@@ -232,20 +230,20 @@ def make_withholding_tax_cert_employee(source_name, target_doc=None):
 
 
 def get_pvd_contribution(salary_slip):
-    prev_period_pvd_amount = 0
-    current_period_pvd_amount = 0
+	prev_period_pvd_amount = 0
+	current_period_pvd_amount = 0
 
-    ss = salary_slip
-    if not ss.custom_payroll_period:
-        return 0
-    pp = frappe.get_cached_doc("Payroll Period", ss.custom_payroll_period)
-    st = frappe.get_cached_doc("Salary Structure", ss.salary_structure)
+	ss = salary_slip
+	if not ss.custom_payroll_period:
+		return 0
+	pp = frappe.get_cached_doc("Payroll Period", ss.custom_payroll_period)
+	st = frappe.get_cached_doc("Salary Structure", ss.salary_structure)
 
-    pvd_component = st.custom_pvd_component
+	pvd_component = st.custom_pvd_component
 
 	# Previous period pvd amount
-    if pvd_component:
-        prev_period_pvd_amount = salary_slip.get_salary_slip_details(
+	if pvd_component:
+		prev_period_pvd_amount = salary_slip.get_salary_slip_details(
 			pp.start_date,
 			salary_slip.start_date,
 			parentfield="deductions",
@@ -253,17 +251,49 @@ def get_pvd_contribution(salary_slip):
 		)
 
 	# Current period pvd amount
-    for d in ss.get("deductions"):
-        if d.salary_component == pvd_component:
-            current_period_pvd_amount += d.amount
+	for d in ss.get("deductions"):
+		if d.salary_component == pvd_component:
+			current_period_pvd_amount += d.amount
 
-    # Opening entry pvd amount
-    pvd_contribution_till_date = ss.get_opening_for("custom_pvd_contribution_till_date", ss.start_date, ss.end_date)
+	# Opening entry pvd amount
+	pvd_contribution_till_date = ss.get_opening_for("custom_pvd_contribution_till_date", ss.start_date, ss.end_date)
 
-    return (
+	return (
 		prev_period_pvd_amount + current_period_pvd_amount + pvd_contribution_till_date
 	) or 0
 
+def get_sso_contribution(salary_slip):
+	prev_period_sso_amount = 0
+	current_period_sso_amount = 0
+
+	ss = salary_slip
+	if not ss.custom_payroll_period:
+		return 0
+	pp = frappe.get_cached_doc("Payroll Period", ss.custom_payroll_period)
+	st = frappe.get_cached_doc("Salary Structure", ss.salary_structure)
+
+	sso_component = st.custom_sso_component
+
+	# Previous period sso amount
+	if sso_component:
+		prev_period_sso_amount = salary_slip.get_salary_slip_details(
+			pp.start_date,
+			salary_slip.start_date,
+			parentfield="deductions",
+			salary_component=sso_component,
+		)
+
+	# Current period sso amount
+	for d in ss.get("deductions"):
+		if d.salary_component == sso_component:
+			current_period_sso_amount += d.amount
+
+	# Opening entry sso amount
+	sso_contribution_till_date = ss.get_opening_for("custom_sso_contribution_till_date", ss.start_date, ss.end_date)
+
+	return (
+		prev_period_sso_amount + current_period_sso_amount + sso_contribution_till_date
+	) or 0
 
 def auto_revise_tax_exemption_declaration(doc):
 	use_thai_pit, auto_revise = frappe.get_cached_value(
