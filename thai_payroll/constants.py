@@ -173,6 +173,13 @@ CUSTOM_FIELDS = {
 			"insert_after": "tax_deducted_till_date",
 			"label": "PVD Contribution Till Date",
 			"options": "currency"
+		},
+		{
+			"fieldname": "custom_sso_contribution_till_date",
+			"fieldtype": "Currency",
+			"insert_after": "custom_pvd_contribution_till_date",
+			"label": "SSO Contribution Till Date",
+			"options": "currency"
 		}
 	],
 	"Salary Structure": [
@@ -182,6 +189,14 @@ CUSTOM_FIELDS = {
 			"fieldtype": "Link",
 			"insert_after": "conditions_and_formula_variable_and_example",
 			"label": "PVD Component",
+			"options": "Salary Component",
+			"link_filters": "[[\"Salary Component\",\"type\",\"=\",\"Deduction\"]]"
+		},
+		{
+			"fieldname": "custom_sso_component",
+			"fieldtype": "Link",
+			"insert_after": "custom_pvd_component",
+			"label": "SSO Component",
 			"options": "Salary Component",
 			"link_filters": "[[\"Salary Component\",\"type\",\"=\",\"Deduction\"]]"
 		}
