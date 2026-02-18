@@ -172,14 +172,16 @@ CUSTOM_FIELDS = {
 			"fieldtype": "Currency",
 			"insert_after": "tax_deducted_till_date",
 			"label": "PVD Contribution Till Date",
-			"options": "currency"
+			"options": "currency",
+			"allow_on_submit": 1,
 		},
 		{
 			"fieldname": "custom_sso_contribution_till_date",
 			"fieldtype": "Currency",
 			"insert_after": "custom_pvd_contribution_till_date",
 			"label": "SSO Contribution Till Date",
-			"options": "currency"
+			"options": "currency",
+			"allow_on_submit": 1,
 		}
 	],
 	"Salary Structure": [
