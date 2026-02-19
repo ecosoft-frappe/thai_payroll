@@ -147,7 +147,7 @@ def update_payroll_period(doc, method):
 	""" Update the payroll period in the salary slip based on the selected posting date """
 	period = frappe.db.get_value(
 		"Payroll Period",
-		{"start_date": ["<=", doc.end_date], "end_date": [">=", doc.end_date]},
+		{"company": doc.company, "start_date": ["<=", doc.end_date], "end_date": [">=", doc.end_date]},
 		"name"
 	)
 	frappe.db.set_value("Salary Slip", doc.name, "custom_payroll_period", period)
