@@ -2,7 +2,7 @@ from datetime import timedelta
 import frappe
 import urllib3
 from frappe import _
-from frappe.utils import ceil, getdate
+from frappe.utils import ceil, flt, getdate
 from hrms.payroll.doctype.payroll_entry.payroll_entry import get_start_end_dates
 from hrms.payroll.doctype.employee_tax_exemption_declaration.employee_tax_exemption_declaration import EmployeeTaxExemptionDeclaration
 from thai_payroll.mixins.thai_payroll_mixin import ThaiPayrollMixin
@@ -383,7 +383,62 @@ def prepare_salary_slip(company, payroll_period, employee, is_opening_entry=None
 def get_employee_yearly_salary(company, payroll_period, employee, is_opening_entry=None, opening_entry_date=None):
 	""" Find most up to date yearly salary, except when on_date is specified """
 	ss = prepare_salary_slip(company, payroll_period, employee, is_opening_entry, opening_entry_date)
-	return ss.ctc-ss.non_taxable_earnings
+	yearly_salary = ss.ctc - ss.non_taxable_earnings
+	return yearly_salary + get_partial_joining_month_adjustment(
+		ss, payroll_period
+	)
+
+
+def get_partial_joining_month_adjustment(ss, payroll_period):
+	"""Missing part of the yearly salary, in amount, for an employee who joined mid month.
+
+	Frappe HR treats the joining month as a full structured month and projects the future
+	months with ``round(remaining_sub_periods) - 1`` (salary_slip.py, compute_ctc). A
+	mid month joiner therefore loses the unpaid part of the joining month, and also loses
+	the following month whenever the fraction rounds down.
+
+	Only the partial joining month is corrected. Every other case returns 0, so the value
+	computed by Frappe HR is used unchanged.
+	"""
+	pp = frappe.get_cached_doc("Payroll Period", payroll_period)
+	joining_date = getdate(ss.joining_date) if ss.joining_date else None
+	if not joining_date or joining_date <= getdate(pp.start_date):
+		return 0
+
+	total_working_days = flt(ss.get("total_working_days"))
+	payment_days = flt(ss.get("payment_days"))
+	if not total_working_days or not payment_days:
+		return 0
+
+	share = payment_days / total_working_days
+	if share >= 1:
+		return 0
+
+	current = getattr(ss, "current_taxable_earnings", None)
+	if not current:
+		return 0
+
+	month_full = flt(current.taxable_earnings) + flt(current.amount_exempted_from_income_tax)
+	prorated_current = flt(getattr(ss, "current_structured_taxable_earnings_before_exemption", 0))
+	remaining_sub_periods = flt(getattr(ss, "remaining_sub_periods", 0))
+
+	return get_joining_month_adjustment(
+		month_full, prorated_current, share, remaining_sub_periods
+	)
+
+
+def get_joining_month_adjustment(month_full, prorated_current, share, remaining_sub_periods):
+	"""Amount to add to the ctc of a mid month joiner.
+
+	month_full            taxable earnings of a full joining month (before exemption)
+	prorated_current      joining month amount already counted by the ctc
+	share                 worked part of the joining month (payment days / working days)
+	remaining_sub_periods fractional periods left in the payroll period
+	"""
+	adjustment = month_full * share - prorated_current
+	# round() drops a whole month when the fraction is below .5, ceil() does not
+	adjustment += month_full * (ceil(remaining_sub_periods) - round(remaining_sub_periods))
+	return adjustment
 
 
 @frappe.whitelist()
